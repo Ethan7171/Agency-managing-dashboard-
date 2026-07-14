@@ -1,0 +1,28 @@
+{
+  "name": "@flax/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && mkdir -p dist/db/migrations && cp src/db/migrations/*.sql dist/db/migrations/",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed:demo": "tsx src/seed/demo.ts",
+    "start:api": "node dist/index.js",
+    "start:worker": "node dist/worker.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "pg-boss": "^10.1.5"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

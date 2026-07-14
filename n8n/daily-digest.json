@@ -1,0 +1,56 @@
+{
+  "name": "Flax OCC — Daily Digest to Slack",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 7 * * *" }] } },
+      "name": "Every morning 07:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FLAX_OCC_BASE_URL }}/api/auth/login",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [{ "name": "password", "value": "={{ $env.FLAX_OCC_PASSWORD }}" }] },
+        "options": { "response": { "response": { "fullResponse": true } } }
+      },
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.FLAX_OCC_BASE_URL }}/api/digest/daily.txt",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Cookie", "value": "={{ $json.headers['set-cookie'][0].split(';')[0] }}" }] },
+        "options": { "response": { "response": { "responseFormat": "text" } } }
+      },
+      "name": "Fetch digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.data }) }}"
+      },
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 0]
+    }
+  ],
+  "connections": {
+    "Every morning 07:00": { "main": [[{ "node": "Login", "type": "main", "index": 0 }]] },
+    "Login": { "main": [[{ "node": "Fetch digest", "type": "main", "index": 0 }]] },
+    "Fetch digest": { "main": [[{ "node": "Post to Slack", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

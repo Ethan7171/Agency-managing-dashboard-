@@ -1,0 +1,15 @@
+{
+  "name": "flax-command-center",
+  "private": true,
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "build": "npm run build -w web && npm run build -w server",
+    "migrate": "npm run migrate -w server",
+    "seed:demo": "npm run seed:demo -w server",
+    "start:api": "npm run start:api -w server",
+    "start:worker": "npm run start:worker -w server",
+    "dev:api": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web"
+  }
+}

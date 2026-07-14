@@ -1,0 +1,73 @@
+{
+  "name": "Flax OCC — Critical Alert Relay (hourly)",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "5 * * * *" }] } },
+      "name": "Hourly",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FLAX_OCC_BASE_URL }}/api/auth/login",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [{ "name": "password", "value": "={{ $env.FLAX_OCC_PASSWORD }}" }] },
+        "options": { "response": { "response": { "fullResponse": true } } }
+      },
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [200, 0]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.FLAX_OCC_BASE_URL }}/api/alerts",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Cookie", "value": "={{ $json.headers['set-cookie'][0].split(';')[0] }}" }] }
+      },
+      "name": "Fetch open alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "version": 2 },
+          "combinator": "and",
+          "conditions": [{
+            "leftValue": "={{ $json.severity }}",
+            "rightValue": "critical",
+            "operator": { "type": "string", "operation": "equals" }
+          }]
+        }
+      },
+      "name": "Critical only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [600, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: '🔴 ' + $json.type + ' — ' + $json.message }) }}"
+      },
+      "name": "Escalate to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 0]
+    }
+  ],
+  "connections": {
+    "Hourly": { "main": [[{ "node": "Login", "type": "main", "index": 0 }]] },
+    "Login": { "main": [[{ "node": "Fetch open alerts", "type": "main", "index": 0 }]] },
+    "Fetch open alerts": { "main": [[{ "node": "Critical only", "type": "main", "index": 0 }]] },
+    "Critical only": { "main": [[{ "node": "Escalate to Slack", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
